@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecos do Silêncio | Espaço Introspectivo</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        fog: {
+                            950: '#070c10',
+                            900: '#0d151c',
+                            850: '#121d26',
+                            800: '#182733',
+                            700: '#233847',
+                            600: '#324e61',
+                            500: '#48687d',
+                            400: '#678ba0',
+                            300: '#8eb0c4',
+                            200: '#b9d2e0',
+                            100: '#e1eef5',
+                        },
+                        mist: {
+                            dark: '#0a1218',
+                            slate: '#1c2e3a',
+                            muted: '#2b4352',
+                            cyan: '#5b8296',
+                            light: '#92b4c4',
+                            moss: '#1d2a23'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        body: ['Lora', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom Style Overrides -->
+    <style>
+        body {
+            background-color: #070c10;
+            color: #dce8ee;
+            font-family: 'Lora', serif;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090e13;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1c2e3a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #324e61;
+        }
+
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(13, 21, 28, 0.72);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(91, 130, 150, 0.18);
+        }
+
+        .glass-card {
+            background: rgba(18, 29, 38, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(91, 130, 150, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(146, 180, 196, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Glowing accents */
+        .glow-subtle {
+            box-shadow: 0 0 20px rgba(91, 130, 150, 0.12);
+        }
+
+        /* Pulsing animation for active audio recording */
+        @keyframes pulse-red {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.75; }
+        }
+        .recording-pulse {
+            animation: pulse-red 1.5s infinite ease-in-out;
+        }
+
+        /* Ambient Canvas overlay */
+        #fogCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Custom Range Input */
+        input[type=range] {
+            accent-color: #678ba0;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col antialiased selection:bg-fog-600 selection:text-white">
+    <!-- Canvas for Melancholic Animated Fog / Mist -->
+    <canvas id="fogCanvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-fog-700/30 py-4 px-4 sm:px-8 shadow-lg">
+        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-full bg-fog-800 border border-fog-500/30 flex items-center justify-center text-fog-300">
+                    <i class="fa-solid fa-cloud-moon text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif text-2xl sm:text-3xl font-semibold tracking-wide text-fog-100">Ecos do Silêncio</h1>
+                    <p class="text-xs text-fog-400 italic">Um refúgio para o que pesa no peito</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center gap-3">
+                <!-- Ambient Audio Synthesizer Control Toggle -->
+                <button id="ambientAudioBtn" class="flex items-center gap-2 bg-fog-800/80 hover:bg-fog-700 text-fog-300 hover:text-fog-100 px-3.5 py-2 rounded-xl border border-fog-600/30 transition text-xs sm:text-sm" title="Sons de Chuva e Vento">
+                    <i id="ambientIcon" class="fa-solid fa-cloud-showers-heavy"></i>
+                    <span id="ambientText" class="hidden sm:inline">Som Ambiente</span>
+                </button>
+
+                <!-- Data Backup (Export/Import) Modal Trigger -->
+                <button id="backupModalBtn" class="flex items-center gap-2 bg-fog-800/80 hover:bg-fog-700 text-fog-300 hover:text-fog-100 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border border-fog-600/30 transition text-xs sm:text-sm" title="Backup e Exportação">
+                    <i class="fa-solid fa-box-archive"></i>
+                    <span class="hidden sm:inline">Backup</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ambient Sound Control Drawer Panel (Hidden by default) -->
+    <div id="ambientDrawer" class="hidden sticky top-[73px] z-30 glass-panel border-b border-fog-600/30 py-4 px-6 text-xs text-fog-300">
+        <div class="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+                <span class="font-serif text-sm font-semibold text-fog-200">Gerador Sintético de Atmosfera</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-fog-800 border border-fog-600/40 text-fog-400">Web Audio API</span>
+            </div>
+            
+            <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
+                <!-- Rain Volume -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-droplet text-fog-400"></i>
+                    <span class="text-xs">Chuva</span>
+                    <input type="range" id="rainVol" min="0" max="1" step="0.05" value="0.3" class="w-20 sm:w-24 h-1.5 bg-fog-800 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Wind Volume -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-wind text-fog-400"></i>
+                    <span class="text-xs">Vento</span>
+                    <input type="range" id="windVol" min="0" max="1" step="0.05" value="0.2" class="w-20 sm:w-24 h-1.5 bg-fog-800 rounded-lg cursor-pointer">
+                </div>
+
+                <!-- Master Toggle -->
+                <button id="toggleSynthBtn" class="bg-fog-700 hover:bg-fog-600 text-fog-100 px-3 py-1.5 rounded-lg text-xs font-sans transition">
+                    Ligar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- LEFT COLUMN: Form to add new melancholic log -->
+        <section class="lg:col-span-5 space-y-6">
+            <div class="glass-panel rounded-2xl p-5 sm:p-6 shadow-xl border border-fog-600/30 sticky top-24">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-serif text-xl text-fog-100 font-medium flex items-center gap-2">
+                        <i class="fa-regular fa-feather text-fog-400"></i>
+                        <span>Novo Desabafo</span>
+                    </h2>
+                    <span class="text-xs text-fog-400 italic">Espaço seguro & privado</span>
+                </div>
+
+                <form id="entryForm" class="space-y-5">
+                    <!-- Sentiment / Emotion Selector Chips -->
+                    <div>
+                        <label class="block text-xs font-sans text-fog-300 mb-2 uppercase tracking-wider">Como está o seu peito agora?</label>
+                        <div class="flex flex-wrap gap-2" id="moodChips">
+                            <button type="button" data-mood="Melancolia" class="mood-chip active bg-fog-700/80 text-fog-100 border border-fog-400 px-3 py-1 rounded-full text-xs transition">Melancolia</button>
+                            <button type="button" data-mood="Solidão" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Solidão</button>
+                            <button type="button" data-mood="Vazio" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Vazio</button>
+                            <button type="button" data-mood="Saudade" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Saudade</button>
+                            <button type="button" data-mood="Nostalgia" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Nostalgia</button>
+                            <button type="button" data-mood="Tempestade Interna" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Tempestade Interna</button>
+                            <button type="button" data-mood="Silêncio" class="mood-chip bg-fog-800/60 text-fog-400 border border-fog-700 hover:border-fog-500 px-3 py-1 rounded-full text-xs transition">Silêncio</button>
+                        </div>
+                    </div>
+
+                    <!-- Text Thoughts Area -->
+                    <div>
+                        <textarea id="entryText" rows="5" placeholder="Escreva aqui tudo o que machuca, o que pesa, o que não dá para dizer em voz alta..." class="w-full bg-fog-950/60 text-fog-100 placeholder-fog-500/70 border border-fog-700/50 rounded-xl p-3.5 focus:outline-none focus:border-fog-400 focus:ring-1 focus:ring-fog-400 text-sm leading-relaxed transition resize-y"></textarea>
+                    </div>
+
+                    <!-- Live Audio Recording Section -->
+                    <div class="bg-fog-950/40 p-3.5 rounded-xl border border-fog-700/40 space-y-3">
+                        <div class="flex items-center justify-between text-xs text-fog-300">
+                            <span class="flex items-center gap-1.5 font-medium">
+                                <i class="fa-solid fa-microphone text-fog-400"></i> Nota de Voz (Áudio)
+                            </span>
+                            <span id="recordTimer" class="font-mono text-fog-400 hidden">00:00</span>
+                        </div>
+
+                        <!-- Recording Control Buttons -->
+                        <div class="flex items-center gap-3">
+                            <button type="button" id="startRecordBtn" class="flex-1 flex items-center justify-center gap-2 bg-fog-800 hover:bg-fog-700 text-fog-200 border border-fog-600/40 py-2 rounded-lg text-xs font-sans transition">
+                                <i class="fa-solid fa-circle text-red-500 text-[10px]" id="recDot"></i>
+                                <span>Gravar Voz</span>
+                            </button>
+
+                            <button type="button" id="stopRecordBtn" class="hidden flex-1 flex items-center justify-center gap-2 bg-red-900/60 hover:bg-red-800 text-red-100 border border-red-500/40 py-2 rounded-lg text-xs font-sans transition">
+                                <i class="fa-solid fa-square text-xs"></i>
+                                <span>Parar Recording</span>
+                            </button>
+                        </div>
+
+                        <!-- Recorded Audio Preview -->
+                        <div id="audioPreviewContainer" class="hidden pt-2 border-t border-fog-800">
+                            <div class="flex items-center justify-between text-xs text-fog-400 mb-1">
+                                <span>Prévia do Áudio</span>
+                                <button type="button" id="discardAudioBtn" class="text-red-400 hover:text-red-300">
+                                    <i class="fa-solid fa-trash-can"></i> Remover
+                                </button>
+                            </div>
+                            <audio id="audioPreview" controls class="w-full h-8 rounded-lg opacity-85"></audio>
+                        </div>
+                    </div>
+
+                    <!-- Image Attachment Area -->
+                    <div class="bg-fog-950/40 p-3.5 rounded-xl border border-fog-700/40 space-y-2">
+                        <div class="flex items-center justify-between text-xs text-fog-300">
+                            <span class="flex items-center gap-1.5 font-medium">
+                                <i class="fa-regular fa-image text-fog-400"></i> Anexar Foto / Imagem
+                            </span>
+                        </div>
+
+                        <!-- Drag & Drop Input -->
+                        <div id="dropZone" class="border-2 border-dashed border-fog-700 hover:border-fog-500 rounded-lg p-4 text-center cursor-pointer transition">
+                            <input type="file" id="imageInput" accept="image/*" class="hidden">
+                            <i class="fa-solid fa-cloud-arrow-up text-fog-500 text-xl mb-1"></i>
+                            <p class="text-xs text-fog-400">Clique para escolher ou arraste uma imagem</p>
+                        </div>
+
+                        <!-- Image Preview -->
+                        <div id="imagePreviewContainer" class="hidden relative group rounded-lg overflow-hidden border border-fog-600/40 mt-2">
+                            <img id="imagePreview" src="" alt="Prévia" class="w-full max-h-48 object-cover">
+                            <button type="button" id="removeImageBtn" class="absolute top-2 right-2 bg-fog-950/80 hover:bg-red-900/90 text-fog-200 hover:text-white p-1.5 rounded-full border border-fog-700 transition">
+                                <i class="fa-solid fa-xmark text-xs w-3 h-3 flex items-center justify-center"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-fog-700 to-fog-800 hover:from-fog-600 hover:to-fog-700 text-fog-100 font-serif font-medium py-3 rounded-xl border border-fog-500/40 shadow-lg transition duration-200 flex items-center justify-center gap-2 group">
+                        <i class="fa-solid fa-paper-plane text-xs text-fog-300 group-hover:translate-x-1 transition-transform"></i>
+                        <span>Guardar no Silêncio</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Search, Filters & Feed of Posts -->
+        <section class="lg:col-span-7 space-y-6">
+            <!-- Search & Filter Controls Panel -->
+            <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-fog-600/30 space-y-4">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <!-- Text Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-fog-500 text-xs"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar nas lembranças e desabafos..." class="w-full pl-9 pr-4 py-2 bg-fog-950/60 border border-fog-700/50 rounded-xl text-xs text-fog-100 placeholder-fog-500 focus:outline-none focus:border-fog-400">
+                    </div>
+
+                    <!-- Filter by Sentiment -->
+                    <select id="filterMood" class="bg-fog-950/60 border border-fog-700/50 text-fog-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-fog-400">
+                        <option value="ALL">Todos os sentimentos</option>
+                        <option value="Melancolia">Melancolia</option>
+                        <option value="Solidão">Solidão</option>
+                        <option value="Vazio">Vazio</option>
+                        <option value="Saudade">Saudade</option>
+                        <option value="Nostalgia">Nostalgia</option>
+                        <option value="Tempestade Interna">Tempestade Interna</option>
+                        <option value="Silêncio">Silêncio</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Mural / Feed Container -->
+            <div id="entriesFeed" class="space-y-5">
+                <!-- Entries will be dynamically populated here -->
+            </div>
+
+            <!-- Empty State Placeholder -->
+            <div id="emptyState" class="hidden glass-panel rounded-2xl p-12 text-center border border-fog-700/20 my-8">
+                <i class="fa-solid fa-wind text-fog-600 text-4xl mb-3 block"></i>
+                <h3 class="font-serif text-lg text-fog-300 mb-1">Nenhum eco gravado ainda</h3>
+                <p class="text-xs text-fog-500 max-w-sm mx-auto">Sua alma está em silêncio por aqui. Deixe que as palavras, sons ou imagens encontrem repouso nesta página.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 border-t border-fog-800/40 text-center text-xs text-fog-500 glass-panel">
+        <p class="font-serif">"A névoa acolhe o que o mundo não entende."</p>
+        <p class="mt-1 text-[11px] text-fog-600">Ecos do Silêncio &bull; Armazenamento local, íntimo e privado</p>
+    </footer>
+
+    <!-- Image Lightbox Modal -->
+    <div id="lightboxModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <button id="closeLightbox" class="absolute top-6 right-6 text-fog-300 hover:text-white text-2xl p-2 transition">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="max-w-4xl max-h-[90vh] overflow-hidden rounded-xl border border-fog-600/30 shadow-2xl">
+            <img id="lightboxImage" src="" alt="Ampliada" class="max-w-full max-h-[85vh] object-contain mx-auto">
+        </div>
+    </div>
+
+    <!-- Backup & Restore Modal -->
+    <div id="backupModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full rounded-2xl p-6 border border-fog-600/40 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-fog-700/40 pb-3">
+                <h3 class="font-serif text-lg text-fog-100 flex items-center gap-2">
+                    <i class="fa-solid fa-database text-fog-400"></i>
+                    <span>Backup dos Seus Ecos</span>
+                </h3>
+                <button id="closeBackupModal" class="text-fog-400 hover:text-fog-100 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-fog-300 leading-relaxed">
+                Todos os seus desabafos ficam gravados apenas no seu navegador. Você pode baixar uma cópia em arquivo JSON para guardar em um local seguro ou importar mais tarde.
+            </p>
+
+            <div class="space-y-3 pt-2">
+                <button id="exportJsonBtn" class="w-full flex items-center justify-center gap-2 bg-fog-800 hover:bg-fog-700 text-fog-100 border border-fog-600/50 py-2.5 rounded-xl text-xs font-sans transition">
+                    <i class="fa-solid fa-download text-fog-400"></i>
+                    <span>Exportar Registros (JSON)</span>
+                </button>
+
+                <div class="relative">
+                    <input type="file" id="importJsonInput" accept=".json" class="hidden">
+                    <button id="triggerImportBtn" class="w-full flex items-center justify-center gap-2 bg-fog-900 hover:bg-fog-800 text-fog-300 border border-fog-700 py-2.5 rounded-xl text-xs font-sans transition">
+                        <i class="fa-solid fa-upload text-fog-400"></i>
+                        <span>Importar Arquivo JSON</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Custom Confirmation Modal (Replaces native confirm/alert) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-sm w-full rounded-2xl p-5 border border-fog-600/40 shadow-2xl space-y-4 text-center">
+            <div class="w-12 h-12 rounded-full bg-red-950/60 border border-red-800/50 mx-auto flex items-center justify-center text-red-400 text-lg">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <div>
+                <h4 class="font-serif text-base text-fog-100 font-medium" id="confirmTitle">Apagar Desabafo</h4>
+                <p class="text-xs text-fog-400 mt-1" id="confirmMessage">Esta ação não poderá ser desfeita. Deseja realmente remover este registro?</p>
+            </div>
+            <div class="flex items-center gap-3 pt-2">
+                <button id="confirmCancelBtn" class="flex-1 bg-fog-800 hover:bg-fog-700 text-fog-300 border border-fog-700 py-2 rounded-xl text-xs transition">Cancelar</button>
+                <button id="confirmOkBtn" class="flex-1 bg-red-900/80 hover:bg-red-800 text-red-100 border border-red-700 py-2 rounded-xl text-xs transition">Sim, Apagar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. BACKGROUND FOG CANVAS ANIMATION
+        // ==========================================
+        const canvas = document.getElementById('fogCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Mist Particles
+        const particles = [];
+        const particleCount = 28;
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 250 + 150,
+                opacity: Math.random() * 0.15 + 0.05,
+                vx: (Math.random() - 0.5) * 0.25,
+                vy: (Math.random() - 0.5) * 0.15,
+                hue: Math.random() * 20 + 195 // Foggy blue-teal shades
+            });
+        }
+
+        function drawFog() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dark moody gradient base
+            const baseGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            baseGrad.addColorStop(0, '#070c10');
+            baseGrad.addColorStop(0.5, '#0d161d');
+            baseGrad.addColorStop(1, '#080d11');
+            ctx.fillStyle = baseGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw drifting soft particles
+            for (let p of particles) {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < -p.radius) p.x = canvas.width + p.radius;
+                if (p.x > canvas.width + p.radius) p.x = -p.radius;
+                if (p.y < -p.radius) p.y = canvas.height + p.radius;
+                if (p.y > canvas.height + p.radius) p.y = -p.radius;
+
+                const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+                grad.addColorStop(0, `hsla(${p.hue}, 25%, 22%, ${p.opacity})`);
+                grad.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(drawFog);
+        }
+        drawFog();
+
+        // ==========================================
+        // 2. WEB AUDIO API SYNTHESIZER (RAIN & WIND)
+        // ==========================================
+        let audioCtx = null;
+        let rainSource = null, rainGain = null, rainFilter = null;
+        let windSource = null, windGain = null, windFilter = null, windLfo = null;
+        let isSynthPlaying = false;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+        }
+
+        // Generate Pink Noise Buffer
+        function createPinkNoiseBuffer(ctx) {
+            const bufferSize = 4 * ctx.sampleRate;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const output = buffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                let white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                output[i] *= 0.11;
+                b6 = white * 0.115926;
+            }
+            return buffer;
+        }
+
+        function startAmbientSound() {
+            initAudioContext();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const noiseBuffer = createPinkNoiseBuffer(audioCtx);
+
+            // --- Rain Sound Node Setup ---
+            rainSource = audioCtx.createBufferSource();
+            rainSource.buffer = noiseBuffer;
+            rainSource.loop = true;
+
+            rainFilter = audioCtx.createBiquadFilter();
+            rainFilter.type = 'lowpass';
+            rainFilter.frequency.value = 1000;
+
+            rainGain = audioCtx.createGain();
+            const rainVolVal = parseFloat(document.getElementById('rainVol').value);
+            rainGain.gain.setValueAtTime(rainVolVal, audioCtx.currentTime);
+
+            rainSource.connect(rainFilter);
+            rainFilter.connect(rainGain);
+            rainGain.connect(audioCtx.destination);
+            rainSource.start();
+
+            // --- Wind Sound Node Setup ---
+            windSource = audioCtx.createBufferSource();
+            windSource.buffer = noiseBuffer;
+            windSource.loop = true;
+
+            windFilter = audioCtx.createBiquadFilter();
+            windFilter.type = 'bandpass';
+            windFilter.frequency.value = 350;
+            windFilter.Q.value = 3.0;
+
+            // Modulation for blowing wind effect
+            windLfo = audioCtx.createOscillator();
+            windLfo.frequency.value = 0.15; // Slow breeze pulse
+            const lfoGain = audioCtx.createGain();
+            lfoGain.gain.value = 200;
+            windLfo.connect(lfoGain);
+            lfoGain.connect(windFilter.frequency);
+            windLfo.start();
+
+            windGain = audioCtx.createGain();
+            const windVolVal = parseFloat(document.getElementById('windVol').value);
+            windGain.gain.setValueAtTime(windVolVal, audioCtx.currentTime);
+
+            windSource.connect(windFilter);
+            windFilter.connect(windGain);
+            windGain.connect(audioCtx.destination);
+            windSource.start();
+
+            isSynthPlaying = true;
+            updateSynthUI();
+        }
+
+        function stopAmbientSound() {
+            if (rainSource) {
+                try { rainSource.stop(); } catch(e){}
+                rainSource.disconnect();
+            }
+            if (windSource) {
+                try { windSource.stop(); } catch(e){}
+                windSource.disconnect();
+            }
+            if (windLfo) {
+                try { windLfo.stop(); } catch(e){}
+                windLfo.disconnect();
+            }
+            isSynthPlaying = false;
+            updateSynthUI();
+        }
+
+        function updateSynthUI() {
+            const toggleBtn = document.getElementById('toggleSynthBtn');
+            const ambientIcon = document.getElementById('ambientIcon');
+            if (isSynthPlaying) {
+                toggleBtn.textContent = 'Desligar';
+                toggleBtn.classList.replace('bg-fog-700', 'bg-red-900/70');
+                ambientIcon.classList.add('text-teal-400');
+            } else {
+                toggleBtn.textContent = 'Ligar';
+                toggleBtn.classList.replace('bg-red-900/70', 'bg-fog-700');
+                ambientIcon.classList.remove('text-teal-400');
+            }
+        }
+
+        // Toggle Drawer
+        document.getElementById('ambientAudioBtn').addEventListener('click', () => {
+            const drawer = document.getElementById('ambientDrawer');
+            drawer.classList.toggle('hidden');
+        });
+
+        // Toggle Synth On/Off
+        document.getElementById('toggleSynthBtn').addEventListener('click', () => {
+            if (isSynthPlaying) {
+                stopAmbientSound();
+            } else {
+                startAmbientSound();
+            }
+        });
+
+        // Volume Sliders
+        document.getElementById('rainVol').addEventListener('input', (e) => {
+            if (rainGain && audioCtx) {
+                rainGain.gain.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime);
+            }
+        });
+
+        document.getElementById('windVol').addEventListener('input', (e) => {
+            if (windGain && audioCtx) {
+                windGain.gain.setValueAtTime(parseFloat(e.target.value), audioCtx.currentTime);
+            }
+        });
+
+        // ==========================================
+        // 3. INDEXEDDB PERSISTENCE LAYER
+        // ==========================================
+        const DB_NAME = 'EcosDoSilencioDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'entries';
+        let db = null;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains(STORE_NAME)) {
+                        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (e) => {
+                    console.error('Erro ao abrir IndexedDB', e);
+                    reject(e);
+                };
+            });
+        }
+
+        async function saveEntryToDB(entry) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.put(entry);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => reject(e);
+            });
+        }
+
+        async function getAllEntriesFromDB() {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = (e) => reject(e);
+            });
+        }
+
+        async function deleteEntryFromDB(id) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.delete(id);
+                req.onsuccess = () => resolve();
+                req.onerror = (e) => reject(e);
+            });
+        }
+
+        // ==========================================
+        // 4. LIVE MICROPHONE VOICE RECORDER
+        // ==========================================
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordedAudioBase64 = null;
+        let recordTimerInterval = null;
+        let recordSeconds = 0;
+
+        const startRecordBtn = document.getElementById('startRecordBtn');
+        const stopRecordBtn = document.getElementById('stopRecordBtn');
+        const recordTimer = document.getElementById('recordTimer');
+        const audioPreviewContainer = document.getElementById('audioPreviewContainer');
+        const audioPreview = document.getElementById('audioPreview');
+        const discardAudioBtn = document.getElementById('discardAudioBtn');
+        const recDot = document.getElementById('recDot');
+
+        startRecordBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        recordedAudioBase64 = reader.result;
+                        audioPreview.src = recordedAudioBase64;
+                        audioPreviewContainer.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(audioBlob);
+
+                    // Stop mic track
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                
+                // UI updates
+                startRecordBtn.classList.add('hidden');
+                stopRecordBtn.classList.remove('hidden');
+                recordTimer.classList.remove('hidden');
+                recDot.classList.add('recording-pulse');
+
+                // Timer tick
+                recordSeconds = 0;
+                recordTimer.textContent = '00:00';
+                recordTimerInterval = setInterval(() => {
+                    recordSeconds++;
+                    const mins = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+                    const secs = String(recordSeconds % 60).padStart(2, '0');
+                    recordTimer.textContent = `${mins}:${secs}`;
+                }, 1000);
+
+            } catch (err) {
+                showToast('Não foi possível acessar o microfone.', 'error');
+            }
+        });
+
+        stopRecordBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                clearInterval(recordTimerInterval);
+                stopRecordBtn.classList.add('hidden');
+                startRecordBtn.classList.remove('hidden');
+                recDot.classList.remove('recording-pulse');
+            }
+        });
+
+        discardAudioBtn.addEventListener('click', () => {
+            recordedAudioBase64 = null;
+            audioPreview.src = '';
+            audioPreviewContainer.classList.add('hidden');
+            recordTimer.classList.add('hidden');
+        });
+
+        // ==========================================
+        // 5. IMAGE UPLOAD & PREVIEW
+        // ==========================================
+        let attachedImageBase64 = null;
+
+        const dropZone = document.getElementById('dropZone');
+        const imageInput = document.getElementById('imageInput');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        const removeImageBtn = document.getElementById('removeImageBtn');
+
+        dropZone.addEventListener('click', () => imageInput.click());
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleImageFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-fog-400');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-fog-400');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-fog-400');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageFile(file);
+            }
+        });
+
+        function handleImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                attachedImageBase64 = e.target.result;
+                imagePreview.src = attachedImageBase64;
+                imagePreviewContainer.classList.remove('hidden');
+                dropZone.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        removeImageBtn.addEventListener('click', () => {
+            attachedImageBase64 = null;
+            imageInput.value = '';
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+        });
+
+        // ==========================================
+        // 6. MOOD CHIPS SELECTION
+        // ==========================================
+        let selectedMood = 'Melancolia';
+        const moodChips = document.querySelectorAll('.mood-chip');
+
+        moodChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                moodChips.forEach(c => {
+                    c.classList.remove('active', 'bg-fog-700/80', 'text-fog-100', 'border-fog-400');
+                    c.classList.add('bg-fog-800/60', 'text-fog-400', 'border-fog-700');
+                });
+                chip.classList.add('active', 'bg-fog-700/80', 'text-fog-100', 'border-fog-400');
+                chip.classList.remove('bg-fog-800/60', 'text-fog-400', 'border-fog-700');
+                selectedMood = chip.dataset.mood;
+            });
+        });
+
+        // ==========================================
+        // 7. NEW ENTRY SUBMISSION
+        // ==========================================
+        const entryForm = document.getElementById('entryForm');
+        const entryText = document.getElementById('entryText');
+
+        entryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const textVal = entryText.value.trim();
+
+            if (!textVal && !recordedAudioBase64 && !attachedImageBase64) {
+                showToast('Escreva algo ou insira um áudio/imagem para guardar no silêncio.', 'warning');
+                return;
+            }
+
+            const now = new Date();
+            const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+                dateStyle: 'long',
+                timeStyle: 'short'
+            }).format(now);
+
+            const newEntry = {
+                id: 'eco_' + Date.now(),
+                timestamp: now.getTime(),
+                formattedDate: formattedDate,
+                mood: selectedMood,
+                text: textVal,
+                audio: recordedAudioBase64,
+                image: attachedImageBase64
+            };
+
+            try {
+                await saveEntryToDB(newEntry);
+
+                // Reset Form
+                entryText.value = '';
+                if (recordedAudioBase64) discardAudioBtn.click();
+                if (attachedImageBase64) removeImageBtn.click();
+
+                showToast('Seu registro foi guardado no silêncio com sucesso.', 'success');
+                loadAndRenderEntries();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Erro ao salvar registro.', 'error');
+            }
+        });
+
+        // ==========================================
+        // 8. RENDER FEED & CARDS
+        // ==========================================
+        let allEntriesCache = [];
+
+        async function loadAndRenderEntries() {
+            allEntriesCache = await getAllEntriesFromDB();
+            // Sort by newest first
+            allEntriesCache.sort((a, b) => b.timestamp - a.timestamp);
+            applyFiltersAndRender();
+        }
+
+        const entriesFeed = document.getElementById('entriesFeed');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const filterMood = document.getElementById('filterMood');
+
+        searchInput.addEventListener('input', applyFiltersAndRender);
+        filterMood.addEventListener('change', applyFiltersAndRender);
+
+        function applyFiltersAndRender() {
+            const query = searchInput.value.toLowerCase().trim();
+            const moodFilterVal = filterMood.value;
+
+            const filtered = allEntriesCache.filter(item => {
+                const matchesQuery = (item.text || '').toLowerCase().includes(query) || 
+                                     (item.mood || '').toLowerCase().includes(query);
+                const matchesMood = moodFilterVal === 'ALL' || item.mood === moodFilterVal;
+                return matchesQuery && matchesMood;
+            });
+
+            if (filtered.length === 0) {
+                entriesFeed.innerHTML = '';
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                entriesFeed.innerHTML = filtered.map(item => renderEntryCardHTML(item)).join('');
+            }
+        }
+
+        function renderEntryCardHTML(item) {
+            // Sentiment Tag CSS
+            const moodColorMap = {
+                'Melancolia': 'bg-blue-950/70 text-blue-300 border-blue-800/40',
+                'Solidão': 'bg-slate-900/80 text-slate-300 border-slate-700/50',
+                'Vazio': 'bg-zinc-900/80 text-zinc-300 border-zinc-700/50',
+                'Saudade': 'bg-teal-950/70 text-teal-300 border-teal-800/40',
+                'Nostalgia': 'bg-amber-950/60 text-amber-300 border-amber-800/40',
+                'Tempestade Interna': 'bg-red-950/60 text-red-300 border-red-800/40',
+                'Silêncio': 'bg-fog-900 text-fog-300 border-fog-700/50'
+            };
+
+            const tagClass = moodColorMap[item.mood] || 'bg-fog-800 text-fog-300 border-fog-700';
+
+            return `
+                <article class="glass-card rounded-2xl p-5 sm:p-6 space-y-4 relative group" data-id="${item.id}">
+                    <!-- Card Top Bar -->
+                    <div class="flex items-center justify-between border-b border-fog-700/30 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs px-2.5 py-0.5 rounded-full border ${tagClass} font-sans">
+                                ${escapeHtml(item.mood)}
+                            </span>
+                            <span class="text-xs text-fog-400 italic">${escapeHtml(item.formattedDate)}</span>
+                        </div>
+
+                        <!-- Delete Button -->
+                        <button onclick="promptDeleteEntry('${item.id}')" class="text-fog-500 hover:text-red-400 p-1 rounded transition" title="Excluir desabafo">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Text Content -->
+                    ${item.text ? `<p class="text-sm text-fog-100 leading-relaxed font-body whitespace-pre-wrap">${escapeHtml(item.text)}</p>` : ''}
+
+                    <!-- Audio Player -->
+                    ${item.audio ? `
+                        <div class="bg-fog-950/50 p-3 rounded-xl border border-fog-700/40 space-y-1">
+                            <div class="flex items-center gap-2 text-xs text-fog-400 mb-1">
+                                <i class="fa-solid fa-microphone"></i>
+                                <span>Nota de voz gravada</span>
+                            </div>
+                            <audio controls src="${item.audio}" class="w-full h-8 opacity-90"></audio>
+                        </div>
+                    ` : ''}
+
+                    <!-- Image Attachment -->
+                    ${item.image ? `
+                        <div class="rounded-xl overflow-hidden border border-fog-700/40 max-h-80 cursor-pointer" onclick="openLightbox('${item.image}')">
+                            <img src="${item.image}" alt="Anexo" class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                        </div>
+                    ` : ''}
+                </article>
+            `;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+
+        // ==========================================
+        // 9. LIGHTBOX & CUSTOM CONFIRMATION MODALS
+        // ==========================================
+        const lightboxModal = document.getElementById('lightboxModal');
+        const lightboxImage = document.getElementById('lightboxImage');
+        const closeLightbox = document.getElementById('closeLightbox');
+
+        function openLightbox(src) {
+            lightboxImage.src = src;
+            lightboxModal.classList.remove('hidden');
+        }
+
+        closeLightbox.addEventListener('click', () => {
+            lightboxModal.classList.add('hidden');
+            lightboxImage.src = '';
+        });
+
+        lightboxModal.addEventListener('click', (e) => {
+            if (e.target === lightboxModal) {
+                closeLightbox.click();
+            }
+        });
+
+        // Custom Delete Confirmation Modal
+        let entryToDeleteId = null;
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmOkBtn = document.getElementById('confirmOkBtn');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+
+        function promptDeleteEntry(id) {
+            entryToDeleteId = id;
+            confirmModal.classList.remove('hidden');
+        }
+
+        confirmCancelBtn.addEventListener('click', () => {
+            confirmModal.classList.add('hidden');
+            entryToDeleteId = null;
+        });
+
+        confirmOkBtn.addEventListener('click', async () => {
+            if (entryToDeleteId) {
+                try {
+                    await deleteEntryFromDB(entryToDeleteId);
+                    showToast('O desabafo foi removido.', 'info');
+                    loadAndRenderEntries();
+                } catch (err) {
+                    showToast('Erro ao remover desabafo.', 'error');
+                }
+            }
+            confirmModal.classList.add('hidden');
+            entryToDeleteId = null;
+        });
+
+        // ==========================================
+        // 10. BACKUP (JSON EXPORT / IMPORT)
+        // ==========================================
+        const backupModalBtn = document.getElementById('backupModalBtn');
+        const backupModal = document.getElementById('backupModal');
+        const closeBackupModal = document.getElementById('closeBackupModal');
+        const exportJsonBtn = document.getElementById('exportJsonBtn');
+        const triggerImportBtn = document.getElementById('triggerImportBtn');
+        const importJsonInput = document.getElementById('importJsonInput');
+
+        backupModalBtn.addEventListener('click', () => backupModal.classList.remove('hidden'));
+        closeBackupModal.addEventListener('click', () => backupModal.classList.add('hidden'));
+
+        exportJsonBtn.addEventListener('click', async () => {
+            const data = await getAllEntriesFromDB();
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ecos_do_silencio_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Backup baixado com sucesso!', 'success');
+        });
+
+        triggerImportBtn.addEventListener('click', () => importJsonInput.click());
+
+        importJsonInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    if (Array.isArray(importedData)) {
+                        for (let item of importedData) {
+                            if (item.id && item.timestamp) {
+                                await saveEntryToDB(item);
+                            }
+                        }
+                        showToast('Registros importados com sucesso!', 'success');
+                        backupModal.classList.add('hidden');
+                        loadAndRenderEntries();
+                    } else {
+                        showToast('Formato JSON inválido.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Erro ao ler arquivo de backup.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // Toast Notification Function
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            const bgMap = {
+                'success': 'bg-fog-800 border-teal-500/50 text-teal-200',
+                'error': 'bg-red-950 border-red-700/50 text-red-200',
+                'warning': 'bg-amber-950 border-amber-700/50 text-amber-200',
+                'info': 'bg-fog-800 border-fog-500/50 text-fog-200'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border ${bgMap[type] || bgMap['info']} shadow-xl text-xs font-sans transition transform translate-y-2 opacity-0 duration-300`;
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-info"></i>
+                <span>${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Animate out
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ==========================================
+        // 11. INITIALIZATION
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initDB();
+            await loadAndRenderEntries();
+        });
+    </script>
+</body>
+</html>
